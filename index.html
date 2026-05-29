@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
+<style>
+/* ── CSS Variables ── */
+:root {
+  --sky-top:#c8dff7; --sky-mid:#dceeff; --sky-bottom:#eef6ff;
+  --bg:#f0f6ff;
+  --surface:rgba(255,255,255,0.82); --surface-hover:rgba(255,255,255,0.96);
+  --border:rgba(160,190,230,0.40);
+  --text-primary:#1a2640; --text-secondary:#5570a0; --text-muted:#8ba0c0;
+  --accent:#5b8dee; --accent-light:#ddeaff; --accent-hover:#3a6fd8;
+  --green:#3ecf8e; --green-bg:#d6f5e8;
+  --red:#f76a6a;   --red-bg:#fde8e8;
+  --radius:14px; --radius-sm:8px;
+  --shadow:0 4px 24px rgba(80,120,200,.10);
+  --shadow-lg:0 8px 40px rgba(80,120,200,.18);
+  --font-display:'DM Serif Display',serif;
+  --font-body:'DM Sans',sans-serif;
+}
+body.dark {
+  --sky-top:#1a1f35; --sky-mid:#1e2540; --sky-bottom:#22294a;
+  --bg:#181e35;
+  --surface:rgba(30,37,65,.90); --surface-hover:rgba(38,46,80,.98);
+  --border:rgba(80,100,160,.30);
+  --text-primary:#e8eeff; --text-secondary:#8ba0d0; --text-muted:#5570a0;
+  --accent:#7aa5f8; --accent-light:rgba(90,130,240,.18); --accent-hover:#5b8dee;
+  --green-bg:rgba(62,207,142,.15); --red-bg:rgba(247,106,106,.15);
+  --shadow:0 4px 24px rgba(0,0,0,.35); --shadow-lg:0 8px 40px rgba(0,0,0,.48);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);background:var(--bg);color:var(--text-primary);
+  min-height:100vh;transition:background .4s,color .4s;overflow-x:hidden;
+}
+
+/* ── Sky Background ── */
+.sky-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.sky-gradient{
+  position:absolute;inset:0;
+  background:linear-gradient(175deg,var(--sky-top) 0%,var(--sky-mid) 45%,var(--sky-bottom) 100%);
+  transition:background .5s;
+}
+.sun{
+  position:absolute;top:7%;right:12%;width:52px;height:52px;border-radius:50%;
+  background:radial-gradient(circle,#ffe566 30%,#f5a623 100%);
+  box-shadow:0 0 40px rgba(245,166,35,.45),0 0 80px rgba(245,166,35,.2);
+  transition:all .5s;
+}
+body.dark .sun{
+  background:radial-gradient(circle,#d8e4f8 40%,#a0b8e0 100%);
+  box-shadow:0 0 30px rgba(180,210,255,.4);
+  width:38px;height:38px;top:8%;right:11%;
+}
+/* Clouds */
+.cloud{
+  position:absolute;border-radius:100px;background:rgba(255,255,255,.55);
+  filter:blur(2px);animation:driftCloud linear infinite;
+}
+body.dark .cloud{background:rgba(80,100,180,.18)}
+.cloud-1{width:180px;height:50px;top:8%;left:-200px;animation-duration:80s;animation-delay:0s}
+.cloud-2{width:120px;height:35px;top:14%;left:-150px;animation-duration:95s;animation-delay:-30s}
+.cloud-3{width:220px;height:55px;top:5%;left:-260px;animation-duration:110s;animation-delay:-60s}
+.cloud-4{width:90px;height:28px;top:20%;left:-120px;animation-duration:70s;animation-delay:-10s}
+@keyframes driftCloud{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 400px))}}
+/* Hills */
+.hills{position:absolute;bottom:0;left:0;right:0;height:38vh}
+.hill{position:absolute;bottom:0;border-radius:50% 50% 0 0}
+.hill-1{width:90vw;height:32vh;left:-15vw;background:linear-gradient(180deg,#b8d8a0,#9cc87a);opacity:.55}
+.hill-2{width:70vw;height:25vh;right:-10vw;background:linear-gradient(180deg,#7ec8a0,#5bb888);opacity:.48}
+.hill-3{width:50vw;height:18vh;left:20vw;background:linear-gradient(180deg,#a8ddc0,#85caa8);opacity:.42}
+body.dark .hill-1{background:linear-gradient(180deg,#2a3560,#1e2848);opacity:.7}
+body.dark .hill-2{background:linear-gradient(180deg,#222e58,#1a2445);opacity:.7}
+body.dark .hill-3{background:linear-gradient(180deg,#263055,#1d2950);opacity:.6}
+/* City */
+.city{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  display:flex;align-items:flex-end;gap:3px;opacity:.15;
+}
+body.dark .city{opacity:.25}
+.building{background:var(--text-primary);border-radius:3px 3px 0 0;width:var(--w);height:var(--h)}
+/* Birds */
+.bird{position:absolute;font-size:10px;opacity:.45;animation:birdFly linear infinite}
+body.dark .bird{opacity:.3}
+.bird-1{top:12%;left:-30px;animation-duration:35s;animation-delay:-5s}
+.bird-2{top:18%;left:-30px;animation-duration:42s;animation-delay:-15s}
+.bird-3{top:9%;left:-30px;animation-duration:50s;animation-delay:-25s}
+@keyframes birdFly{from{transform:translateX(-50px)}to{transform:translateX(110vw)}}
+
+/* ── Layout ── */
+.app-layout{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+header.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 32px;backdrop-filter:blur(16px);
+  background:rgba(255,255,255,.30);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;transition:background .4s;
+}
+body.dark header.topbar{background:rgba(20,26,50,.55)}
+.logo{font-family:var(--font-display);font-size:1.45rem;color:var(--text-primary);letter-spacing:-.02em}
+.logo span{color:var(--accent)}
+#theme-toggle{
+  background:var(--surface);border:1px solid var(--border);border-radius:50%;
+  width:38px;height:38px;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s;
+}
+#theme-toggle:hover{transform:rotate(20deg) scale(1.08);box-shadow:var(--shadow-lg)}
+main.content{
+  flex:1;max-width:900px;width:100%;margin:36px auto 60px;padding:0 20px;
+  display:flex;flex-direction:column;gap:24px;
+}
+
+/* ── Stats ── */
+.stats-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;backdrop-filter:blur(12px);box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:4px;transition:transform .2s,box-shadow .2s;
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat-label{font-size:.74rem;font-weight:500;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted)}
+.stat-value{font-family:var(--font-display);font-size:2rem;line-height:1;color:var(--text-primary)}
+.stat-card.stat-done .stat-value{color:var(--green)}
+.stat-card.stat-overdue .stat-value{color:var(--red)}
+
+/* ── Glass Card ── */
+.glass-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:28px;backdrop-filter:blur(16px);box-shadow:var(--shadow);transition:box-shadow .3s;
+}
+.glass-card:hover{box-shadow:var(--shadow-lg)}
+.card-title{
+  font-family:var(--font-display);font-size:1.15rem;color:var(--text-primary);
+  margin-bottom:18px;display:flex;align-items:center;gap:8px;
+}
+
+/* ── Form ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+label{font-size:.77rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-secondary)}
+input,select,textarea{
+  font-family:var(--font-body);font-size:.92rem;
+  background:rgba(255,255,255,.65);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 13px;color:var(--text-primary);
+  outline:none;transition:border-color .2s,background .2s,box-shadow .2s;width:100%;
+}
+body.dark input,body.dark select,body.dark textarea{background:rgba(255,255,255,.08)}
+input::placeholder,textarea::placeholder{color:var(--text-muted)}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--accent);background:rgba(255,255,255,.95);
+  box-shadow:0 0 0 3px rgba(91,141,238,.15);
+}
+body.dark input:focus,body.dark select:focus,body.dark textarea:focus{background:rgba(255,255,255,.12)}
+select option{background:var(--bg);color:var(--text-primary)}
+.form-actions{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.btn-primary{
+  background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);
+  padding:11px 24px;font-family:var(--font-body);font-size:.9rem;font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  transition:background .2s,transform .15s,box-shadow .2s;
+  box-shadow:0 4px 14px rgba(91,141,238,.3);
+}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px);box-shadow:0 6px 20px rgba(91,141,238,.4)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{
+  background:transparent;color:var(--text-secondary);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 18px;font-family:var(--font-body);
+  font-size:.9rem;font-weight:500;cursor:pointer;transition:background .2s,color .2s;display:none;
+}
+.btn-secondary:hover{background:var(--accent-light);color:var(--accent)}
+.form-error{
+  color:var(--red);font-size:.82rem;font-weight:500;background:var(--red-bg);
+  border-radius:var(--radius-sm);padding:8px 13px;display:none;margin-bottom:10px;
+}
+
+/* ── Filters ── */
+.filters-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.filters-label{font-size:.77rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted)}
+.filter-select{min-width:148px;max-width:200px;padding:9px 13px;background:var(--surface);backdrop-filter:blur(12px)}
+
+/* ── Task List ── */
+#task-list{display:flex;flex-direction:column;gap:20px}
+.subject-group{display:flex;flex-direction:column;gap:10px}
+.subject-label{
+  font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text-secondary);display:flex;align-items:center;gap:8px;padding:0 4px;
+}
+.subject-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.subject-count{
+  background:var(--accent-light);color:var(--accent);border-radius:20px;
+  padding:1px 8px;font-size:.72rem;font-weight:700;margin-left:auto;
+}
+/* Task Card */
+.task-card{
+  background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px;backdrop-filter:blur(12px);
+  display:flex;align-items:flex-start;gap:14px;
+  box-shadow:var(--shadow);transition:transform .2s,box-shadow .2s,opacity .2s,border-color .2s,background .2s;
+  animation:cardIn .25s ease-out both;
+}
+.task-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);background:var(--surface-hover)}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.task-card.done{opacity:.65;border-color:var(--green);background:rgba(62,207,142,.05)}
+.task-card.overdue{border-color:var(--red);background:rgba(247,106,106,.05)}
+/* Check */
+.check-btn{
+  width:26px;height:26px;border-radius:50%;border:2px solid var(--border);
+  background:transparent;cursor:pointer;font-size:13px;color:transparent;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:all .2s;margin-top:1px;
+}
+.check-btn:hover{border-color:var(--green);background:var(--green-bg)}
+.check-btn.checked{background:var(--green);border-color:var(--green);color:#fff}
+.task-body{flex:1;min-width:0}
+.task-title{font-weight:600;font-size:.97rem;color:var(--text-primary);line-height:1.4}
+.task-card.done .task-title{text-decoration:line-through;color:var(--text-muted)}
+.task-notes{font-size:.83rem;color:var(--text-secondary);margin-top:4px;line-height:1.5}
+.task-meta{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.deadline-badge{font-size:.74rem;color:var(--text-muted);background:var(--accent-light);border-radius:20px;padding:2px 10px}
+.deadline-badge.overdue{color:var(--red);background:var(--red-bg)}
+.overdue-badge{font-size:.71rem;font-weight:700;color:var(--red);background:var(--red-bg);border-radius:20px;padding:2px 9px;text-transform:uppercase;letter-spacing:.05em}
+.done-badge{font-size:.71rem;font-weight:700;color:var(--green);background:var(--green-bg);border-radius:20px;padding:2px 9px;text-transform:uppercase;letter-spacing:.05em}
+.task-actions{display:flex;gap:6px;flex-shrink:0;opacity:0;transition:opacity .2s}
+.task-card:hover .task-actions{opacity:1}
+.btn-icon{background:transparent;border:none;cursor:pointer;font-size:15px;padding:5px;border-radius:var(--radius-sm);transition:background .15s,transform .15s;line-height:1}
+.btn-icon:hover{background:var(--accent-light);transform:scale(1.15)}
+/* Empty */
+.empty-state{
+  text-align:center;padding:48px 24px;color:var(--text-muted);
+  background:var(--surface);border:1.5px dashed var(--border);
+  border-radius:var(--radius);backdrop-filter:blur(8px);
+}
+.empty-icon{font-size:2.5rem;display:block;margin-bottom:12px}
+/* Responsive */
+@media(max-width:640px){
+  main.content{margin:20px auto 40px}
+  .form-grid{grid-template-columns:1fr}
+  .stats-bar{grid-template-columns:1fr 1fr}
+  .stats-bar .stat-card:last-child{grid-column:1/-1}
+  header.topbar{padding:14px 18px}
+  .glass-card{padding:20px 16px}
+  .task-actions{opacity:1}
+}
+</style>
+</head>
+<body>
+
+<!-- Scenic Background -->
+<div class="sky-bg" aria-hidden="true">
+  <div class="sky-gradient"></div>
+  <div class="sun"></div>
+  <div class="cloud cloud-1"></div>
+  <div class="cloud cloud-2"></div>
+  <div class="cloud cloud-3"></div>
+  <div class="cloud cloud-4"></div>
+  <div class="city">
+    <div class="building" style="--w:10px;--h:48px"></div>
+    <div class="building" style="--w:16px;--h:68px"></div>
+    <div class="building" style="--w:12px;--h:55px"></div>
+    <div class="building" style="--w:22px;--h:92px"></div>
+    <div class="building" style="--w:14px;--h:62px"></div>
+    <div class="building" style="--w:28px;--h:112px"></div>
+    <div class="building" style="--w:18px;--h:78px"></div>
+    <div class="building" style="--w:10px;--h:50px"></div>
+    <div class="building" style="--w:24px;--h:98px"></div>
+    <div class="building" style="--w:16px;--h:66px"></div>
+    <div class="building" style="--w:20px;--h:84px"></div>
+    <div class="building" style="--w:12px;--h:52px"></div>
+    <div class="building" style="--w:18px;--h:72px"></div>
+    <div class="building" style="--w:10px;--h:44px"></div>
+  </div>
+  <div class="hills">
+    <div class="hill hill-1"></div>
+    <div class="hill hill-2"></div>
+    <div class="hill hill-3"></div>
+  </div>
+  <div class="bird bird-1">✦</div>
+  <div class="bird bird-2">✦</div>
+  <div class="bird bird-3">✦</div>
+</div>
+
+<!-- App -->
+<div class="app-layout">
+  <header class="topbar">
+    <div class="logo">Study<span>.</span>Planner</div>
+    <button id="theme-toggle" title="Toggle theme">🌙</button>
+  </header>
+
+  <main class="content">
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Total Tasks</div>
+        <div class="stat-value" id="stat-total">0</div>
+      </div>
+      <div class="stat-card stat-done">
+        <div class="stat-label">Completed</div>
+        <div class="stat-value" id="stat-done">0</div>
+      </div>
+      <div class="stat-card stat-overdue">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value" id="stat-overdue">0</div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="glass-card form-card">
+      <div class="card-title">✏️ <span id="form-title">New Task</span></div>
+      <div id="form-error" class="form-error"></div>
+      <form id="task-form" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="input-subject">Subject</label>
+            <input id="input-subject" type="text" placeholder="e.g. Mathematics" autocomplete="off"/>
+          </div>
+          <div class="field">
+            <label for="input-title">Task Title</label>
+            <input id="input-title" type="text" placeholder="e.g. Chapter 5 exercises" autocomplete="off"/>
+          </div>
+          <div class="field">
+            <label for="input-deadline">Deadline</label>
+            <input id="input-deadline" type="date"/>
+          </div>
+          <div class="field">
+            <label for="input-notes">Notes (optional)</label>
+            <input id="input-notes" type="text" placeholder="Any extra details…" autocomplete="off"/>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="submit" id="submit-btn" class="btn-primary">+ Add Task</button>
+          <button type="button" id="cancel-edit-btn" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Task List -->
+    <div class="glass-card">
+      <div class="card-title">📋 Tasks</div>
+      <div class="filters-row">
+        <span class="filters-label">Filter by:</span>
+        <select id="filter-status" class="filter-select">
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="done">Completed</option>
+          <option value="overdue">Overdue</option>
+        </select>
+        <select id="filter-subject" class="filter-select">
+          <option value="">All Subjects</option>
+        </select>
+      </div>
+      <div id="task-list"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ============================================================
+// models/Task.js — Factory Pattern
+// ============================================================
+class Task {
+  constructor({ id, subject, title, deadline, status = 'pending', notes = '' }) {
+    this.id = id;
+    this.subject = subject;
+    this.title = title;
+    this.deadline = deadline;
+    this.status = status;
+    this.notes = notes;
+    this.createdAt = new Date().toISOString();
+  }
+  isOverdue() {
+    if (this.status === 'done') return false;
+    return this.deadline && new Date(this.deadline) < new Date();
+  }
+  isDone() { return this.status === 'done'; }
+}
+
+// Factory Pattern: one place for creation + validation
+const TaskFactory = {
+  create(data) {
+    const errors = this.validate(data);
+    if (errors.length) throw new Error(errors.join(', '));
+    return new Task({ ...data, id: crypto.randomUUID() });
+  },
+  restore(data) { return new Task(data); },
+  validate(data) {
+    const e = [];
+    if (!data.subject?.trim())  e.push('Subject is required');
+    if (!data.title?.trim())    e.push('Task title is required');
+    if (!data.deadline)         e.push('Deadline is required');
+    return e;
+  }
+};
+
+// ============================================================
+// store/TaskStore.js — Singleton + Observer Pattern
+// ============================================================
+const TaskStore = (() => {
+  const STORAGE_KEY = 'planner_tasks';
+  let tasks = [];
+  let listeners = [];
+
+  function notify() { listeners.forEach(fn => fn(tasks)); }
+  function save()   { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      tasks = raw ? JSON.parse(raw).map(t => TaskFactory.restore(t)) : [];
+    } catch { tasks = []; }
+  }
+  load();
+
+  return {
+    // Observer: subscribe to changes
+    subscribe(fn) {
+      listeners.push(fn);
+      return () => { listeners = listeners.filter(l => l !== fn); };
+    },
+    getAll()  { return [...tasks]; },
+    getStats() {
+      return {
+        total:     tasks.length,
+        completed: tasks.filter(t => t.isDone()).length,
+        overdue:   tasks.filter(t => t.isOverdue()).length
+      };
+    },
+    getSubjects() { return [...new Set(tasks.map(t => t.subject).filter(Boolean))]; },
+    add(data)    { const t = TaskFactory.create(data); tasks.push(t); save(); notify(); return t; },
+    update(id, changes) {
+      const t = tasks.find(t => t.id === id);
+      if (t) { Object.assign(t, changes); save(); notify(); }
+    },
+    remove(id)  { tasks = tasks.filter(t => t.id !== id); save(); notify(); },
+    toggle(id)  {
+      const t = tasks.find(t => t.id === id);
+      if (t) { t.status = t.isDone() ? 'pending' : 'done'; save(); notify(); }
+    }
+  };
+})();
+
+// ============================================================
+// strategies/FilterStrategy.js — Strategy Pattern
+// ============================================================
+const FilterStrategies = {
+  all:      { apply: tasks => tasks },
+  pending:  { apply: tasks => tasks.filter(t => t.status === 'pending') },
+  done:     { apply: tasks => tasks.filter(t => t.status === 'done') },
+  overdue:  { apply: tasks => tasks.filter(t => t.isOverdue()) },
+  bySubject: s => ({ apply: tasks => tasks.filter(t => t.subject === s) })
+};
+
+class FilterContext {
+  constructor() { this._strategy = FilterStrategies.all; }
+  setStrategy(s) { this._strategy = s; }
+  apply(tasks)   { return this._strategy.apply(tasks); }
+}
+
+// ============================================================
+// components/TaskComposite.js — Composite Pattern
+// ============================================================
+class TaskLeaf {
+  constructor(task) { this.task = task; }
+  getItems()  { return [this.task]; }
+  getCount()  { return 1; }
+  getLabel()  { return this.task.title; }
+}
+
+class TaskGroup {
+  constructor(label) { this.label = label; this._children = []; }
+  add(child)  { this._children.push(child); return this; }
+  getItems()  { return this._children.flatMap(c => c.getItems()); }
+  getCount()  { return this._children.reduce((s, c) => s + c.getCount(), 0); }
+  getLabel()  { return this.label; }
+}
+
+function buildSubjectTree(tasks) {
+  const map = new Map();
+  for (const task of tasks) {
+    const subject = task.subject || 'Other';
+    if (!map.has(subject)) map.set(subject, new TaskGroup(subject));
+    map.get(subject).add(new TaskLeaf(task));
+  }
+  return [...map.values()];
+}
+
+// ============================================================
+// ui/UIRenderer.js — Single Responsibility (SOLID)
+// ============================================================
+class UIRenderer {
+  constructor() {
+    this.filterCtx   = new FilterContext();
+    this.editingId   = null;
+
+    this.$list       = document.getElementById('task-list');
+    this.$form       = document.getElementById('task-form');
+    this.$fStatus    = document.getElementById('filter-status');
+    this.$fSubject   = document.getElementById('filter-subject');
+    this.$statTotal  = document.getElementById('stat-total');
+    this.$statDone   = document.getElementById('stat-done');
+    this.$statOver   = document.getElementById('stat-overdue');
+    this.$error      = document.getElementById('form-error');
+    this.$submitBtn  = document.getElementById('submit-btn');
+    this.$cancelBtn  = document.getElementById('cancel-edit-btn');
+    this.$theme      = document.getElementById('theme-toggle');
+
+    this.$form.addEventListener('submit', e => this._onSubmit(e));
+    this.$fStatus.addEventListener('change', () => this._applyFilters());
+    this.$fSubject.addEventListener('change', () => this._applyFilters());
+    this.$cancelBtn.addEventListener('click', () => this._cancelEdit());
+    this.$theme.addEventListener('click', () => this._toggleTheme());
+
+    // Observer: auto re-render on store changes
+    TaskStore.subscribe(() => this.render());
+    this.render();
+  }
+
+  render() {
+    this._renderStats(TaskStore.getStats());
+    this._renderSubjectFilter(TaskStore.getSubjects());
+    this._renderList(TaskStore.getAll());
+  }
+
+  _renderStats({ total, completed, overdue }) {
+    this.$statTotal.textContent = total;
+    this.$statDone.textContent  = completed;
+    this.$statOver.textContent  = overdue;
+  }
+
+  _renderSubjectFilter(subjects) {
+    const cur = this.$fSubject.value;
+    this.$fSubject.innerHTML =
+      '<option value="">All Subjects</option>' +
+      subjects.map(s => `<option value="${s}"${s===cur?' selected':''}>${s}</option>`).join('');
+  }
+
+  _applyFilters() {
+    const sub = this.$fSubject.value;
+    const sta = this.$fStatus.value;
+    this.filterCtx.setStrategy(sub ? FilterStrategies.bySubject(sub) : (FilterStrategies[sta] || FilterStrategies.all));
+    this._renderList(TaskStore.getAll());
+  }
+
+  _renderList(allTasks) {
+    const filtered = this.filterCtx.apply(allTasks);
+    const groups   = buildSubjectTree(filtered);
+
+    if (!groups.length) {
+      this.$list.innerHTML = `<div class="empty-state">
+        <span class="empty-icon">📋</span>
+        <p>No tasks here yet. Add one above!</p>
+      </div>`;
+      return;
+    }
+
+    this.$list.innerHTML = groups.map(g => `
+      <div class="subject-group">
+        <h3 class="subject-label">
+          <span class="subject-dot"></span>${g.getLabel()}
+          <span class="subject-count">${g.getCount()}</span>
+        </h3>
+        ${g.getItems().map(t => this._taskCard(t)).join('')}
+      </div>`).join('');
+
+    this.$list.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const { action, id } = btn.dataset;
+        if (action === 'toggle') TaskStore.toggle(id);
+        if (action === 'delete') { if (confirm('Delete this task?')) TaskStore.remove(id); }
+        if (action === 'edit')   this._startEdit(id);
+      });
+    });
+  }
+
+  _taskCard(task) {
+    const ov = task.isOverdue() ? 'overdue' : '';
+    const dn = task.isDone()    ? 'done'    : '';
+    const dl = task.deadline
+      ? new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+      : '';
+    return `
+      <div class="task-card ${dn} ${ov}">
+        <button class="check-btn ${dn}" data-action="toggle" data-id="${task.id}" title="Mark done">
+          ${task.isDone() ? '✓' : ''}
+        </button>
+        <div class="task-body">
+          <div class="task-title">${task.title}</div>
+          ${task.notes ? `<div class="task-notes">${task.notes}</div>` : ''}
+          <div class="task-meta">
+            ${dl ? `<span class="deadline-badge ${ov}">📅 ${dl}</span>` : ''}
+            ${task.isOverdue() ? '<span class="overdue-badge">Overdue</span>' : ''}
+            ${task.isDone()    ? '<span class="done-badge">Done ✓</span>'    : ''}
+          </div>
+        </div>
+        <div class="task-actions">
+          <button class="btn-icon" data-action="edit"   data-id="${task.id}" title="Edit">✏️</button>
+          <button class="btn-icon" data-action="delete" data-id="${task.id}" title="Delete">🗑️</button>
+        </div>
+      </div>`;
+  }
+
+  _onSubmit(e) {
+    e.preventDefault();
+    const data = this._formData();
+    if (this.editingId) {
+      const errs = TaskFactory.validate(data);
+      if (errs.length) return this._showError(errs.join(', '));
+      TaskStore.update(this.editingId, data);
+      this._cancelEdit();
+    } else {
+      try { TaskStore.add(data); this.$form.reset(); this._showError(''); }
+      catch(err) { this._showError(err.message); }
+    }
+  }
+
+  _formData() {
+    return {
+      subject:  document.getElementById('input-subject').value.trim(),
+      title:    document.getElementById('input-title').value.trim(),
+      deadline: document.getElementById('input-deadline').value,
+      notes:    document.getElementById('input-notes').value.trim()
+    };
+  }
+
+  _startEdit(id) {
+    const task = TaskStore.getAll().find(t => t.id === id);
+    if (!task) return;
+    this.editingId = id;
+    document.getElementById('input-subject').value  = task.subject;
+    document.getElementById('input-title').value    = task.title;
+    document.getElementById('input-deadline').value = task.deadline;
+    document.getElementById('input-notes').value    = task.notes;
+    this.$submitBtn.textContent = 'Save Changes';
+    this.$cancelBtn.style.display = 'inline-flex';
+    document.getElementById('form-title').textContent = 'Edit Task';
+    document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  _cancelEdit() {
+    this.editingId = null;
+    this.$form.reset();
+    this.$submitBtn.textContent = '+ Add Task';
+    this.$cancelBtn.style.display = 'none';
+    document.getElementById('form-title').textContent = 'New Task';
+    this._showError('');
+  }
+
+  _showError(msg) {
+    this.$error.textContent   = msg;
+    this.$error.style.display = msg ? 'block' : 'none';
+  }
+
+  _toggleTheme() {
+    const dark = document.body.classList.toggle('dark');
+    this.$theme.textContent = dark ? '☀️' : '🌙';
+    localStorage.setItem('planner_theme', dark ? 'dark' : 'light');
+  }
+}
+
+// ============================================================
+// app.js — Entry Point
+// ============================================================
+(function boot() {
+  if (localStorage.getItem('planner_theme') === 'dark') {
+    document.body.classList.add('dark');
+    document.getElementById('theme-toggle').textContent = '☀️';
+  }
+  new UIRenderer();
+})();
+</script>
+</body>
+</html>
