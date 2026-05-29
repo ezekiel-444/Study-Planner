@@ -1,295 +1,191 @@
+```js
 /**
-
-* TaskStore
-*
-* Singleton Pattern:
-* Only one shared store exists in the entire application.
-* This prevents inconsistent task data.
-*
-* Observer Pattern:
-* Components subscribe to updates instead of constantly checking for changes.
-*
-* Open/Closed Principle:
-* New subscribers or features can be added
-* without modifying existing store logic.
-  */
+ * TaskStore handles all task operations in the application.
+ * It stores tasks, updates them, removes them,
+ * and saves data in localStorage.
+ */
 
 import { TaskFactory } from '../models/Task.js';
 
-// Key used to save tasks inside localStorage
+// localStorage key for saving tasks
 const STORAGE_KEY = 'planner_tasks';
 
 class TaskStore {
 
-constructor() {
+  constructor() {
 
-```
-// Singleton Pattern:
-// Return existing instance if already created
-if (TaskStore._instance) return TaskStore._instance;
+    // Reuse existing store instance
+    if (TaskStore._instance) return TaskStore._instance;
 
-// Save current instance
-TaskStore._instance = this;
+    // Save current instance
+    TaskStore._instance = this;
 
-// Stores all tasks
-this._tasks = [];
+    // Array for storing tasks
+    this._tasks = [];
 
-// Stores subscribed listener functions
-this._listeners = [];
+    // Functions that listen for updates
+    this._listeners = [];
 
-// Load saved tasks when application starts
-this._load();
-```
+    // Load saved tasks when app starts
+    this._load();
+  }
 
-}
-
-/**
-
-* Observer Pattern
-*
-* Allows components to subscribe to store updates.
-* Returns an unsubscribe function.
-  */
+  // Add listener function
   subscribe(listener) {
 
-```
-// Add listener to subscribers list
-```
+    // Store listener
+    this._listeners.push(listener);
 
-```
-this._listeners.push(listener);
-
-// Remove listener later if needed
-return () => {
-  this._listeners =
-    this._listeners.filter(l => l !== listener);
-};
-```
-
-}
-
-/**
-
-* Notify all subscribers about state changes
-  */
-  _notify() {
-  this._listeners.forEach(fn => fn(this._tasks));
+    // Remove listener if needed
+    return () => {
+      this._listeners =
+        this._listeners.filter(l => l !== listener);
+    };
   }
 
-/**
+  // Run all listener functions after updates
+  _notify() {
+    this._listeners.forEach(fn => fn(this._tasks));
+  }
 
-* DRY Principle:
-* One reusable save method used after every data change
-  */
+  // Save tasks into localStorage
   _save() {
 
-```
-// Convert tasks into JSON and save to browser storage
-```
-
-```
-localStorage.setItem(
-  STORAGE_KEY,
-  JSON.stringify(this._tasks)
-);
-```
-
-}
-
-/**
-
-* Load saved tasks from localStorage
-  */
-  _load() {
-
-```
-try {
-```
-
-```
-  // Read saved data
-  const raw = localStorage.getItem(STORAGE_KEY);
-
-  // Convert JSON back into JavaScript objects
-  const data = raw ? JSON.parse(raw) : [];
-
-  // Restore task objects using TaskFactory
-  this._tasks = data.map(t =>
-    TaskFactory.restore(t)
-  );
-
-} catch {
-
-  // Prevent application crash if data is invalid
-  this._tasks = [];
-}
-```
-
-}
-
-/**
-
-* Returns a copy of all tasks
-* Spread operator protects internal array
-  */
-  getAll() {
-  return [...this._tasks];
+    // Convert tasks into JSON text
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(this._tasks)
+    );
   }
 
-/**
+  // Load tasks from localStorage
+  _load() {
 
-* Create and add a new task
-  */
+    try {
+
+      // Get saved data
+      const raw = localStorage.getItem(STORAGE_KEY);
+
+      // Convert JSON into objects
+      const data = raw ? JSON.parse(raw) : [];
+
+      // Restore task objects
+      this._tasks = data.map(t =>
+        TaskFactory.restore(t)
+      );
+
+    } catch {
+
+      // Reset tasks if loading fails
+      this._tasks = [];
+    }
+  }
+
+  // Return all tasks safely
+  getAll() {
+    return [...this._tasks];
+  }
+
+  // Add new task
   add(taskData) {
 
-```
-// Create task object using factory
-```
+    // Create task object
+    const task = TaskFactory.create(taskData);
 
-```
-const task = TaskFactory.create(taskData);
+    // Store task
+    this._tasks.push(task);
 
-// Store task
-this._tasks.push(task);
+    // Save changes and notify listeners
+    this._save();
+    this._notify();
 
-// Save and notify subscribers
-this._save();
-this._notify();
+    return task;
+  }
 
-return task;
-```
-
-}
-
-/**
-
-* Update an existing task
-  */
+  // Update task data
   update(id, changes) {
 
-```
-// Find task index by ID
-```
+    // Find task position
+    const idx =
+      this._tasks.findIndex(t => t.id === id);
 
-```
-const idx =
-  this._tasks.findIndex(t => t.id === id);
+    // Stop if task does not exist
+    if (idx === -1) return;
 
-// Stop if task does not exist
-if (idx === -1) return;
+    // Apply changes
+    Object.assign(this._tasks[idx], changes);
 
-// Apply changes to task object
-Object.assign(this._tasks[idx], changes);
+    // Save changes and notify listeners
+    this._save();
+    this._notify();
+  }
 
-// Save and notify subscribers
-this._save();
-this._notify();
-```
-
-}
-
-/**
-
-* Remove task by ID
-  */
+  // Remove task from store
   remove(id) {
 
-```
-// Keep all tasks except matching ID
-```
+    // Keep all tasks except selected one
+    this._tasks =
+      this._tasks.filter(t => t.id !== id);
 
-```
-this._tasks =
-  this._tasks.filter(t => t.id !== id);
+    // Save changes and notify listeners
+    this._save();
+    this._notify();
+  }
 
-// Save and notify subscribers
-this._save();
-this._notify();
-```
-
-}
-
-/**
-
-* Toggle task status
-* Changes between "done" and "pending"
-  */
+  // Change task status
   toggle(id) {
 
-```
-// Find task by ID
-```
+    // Find task by ID
+    const task =
+      this._tasks.find(t => t.id === id);
 
-```
-const task =
-  this._tasks.find(t => t.id === id);
+    if (!task) return;
 
-if (!task) return;
+    // Switch between done and pending
+    task.status =
+      task.status === 'done'
+        ? 'pending'
+        : 'done';
 
-// Change task status
-task.status =
-  task.status === 'done'
-    ? 'pending'
-    : 'done';
+    // Save changes and notify listeners
+    this._save();
+    this._notify();
+  }
 
-// Save and notify subscribers
-this._save();
-this._notify();
-```
-
-}
-
-/**
-
-* Calculate planner statistics
-  */
+  // Generate task statistics
   getStats() {
 
-```
-// Total number of tasks
-```
+    // Total task count
+    const total = this._tasks.length;
 
-```
-const total = this._tasks.length;
+    // Completed task count
+    const completed =
+      this._tasks.filter(t => t.isDone()).length;
 
-// Count completed tasks
-const completed =
-  this._tasks.filter(t => t.isDone()).length;
+    // Overdue task count
+    const overdue =
+      this._tasks.filter(t => t.isOverdue()).length;
 
-// Count overdue tasks
-const overdue =
-  this._tasks.filter(t => t.isOverdue()).length;
+    return {
+      total,
+      completed,
+      overdue
+    };
+  }
 
-return {
-  total,
-  completed,
-  overdue
-};
-```
-
-}
-
-/**
-
-* Returns unique subjects from tasks
-  */
+  // Get unique subjects
   getSubjects() {
 
-```
-return [
-```
-
-```
-  ...new Set(
-    this._tasks
-      .map(t => t.subject)
-      .filter(Boolean)
-  )
-];
-```
-
-}
+    return [
+      ...new Set(
+        this._tasks
+          .map(t => t.subject)
+          .filter(Boolean)
+      )
+    ];
+  }
 }
 
-// Export single shared store instance
+// Export shared TaskStore
 export const taskStore = new TaskStore();
+```
