@@ -37,7 +37,7 @@ export const FilterStrategies = {
   })
 };
 
-/**
+/** 
  * FilterContext stores the currently selected filter
  * and applies it to the task list.
  */
