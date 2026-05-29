@@ -1,4 +1,3 @@
-```js
 /**
  * TaskStore handles all task operations in the application.
  * It stores tasks, updates them, removes them,
@@ -188,4 +187,4 @@ class TaskStore {
 
 // Export shared TaskStore
 export const taskStore = new TaskStore();
-```
+
