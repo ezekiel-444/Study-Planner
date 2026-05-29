@@ -1,4 +1,3 @@
-```js id="3vz7jv"
 /**
  * FilterStrategies contains different ways to filter tasks.
  * Each filter is separated, which makes the code easier
@@ -59,7 +58,6 @@ export class FilterContext {
     return this._strategy.apply(tasks);
   }
 }
-```
 
 
 
