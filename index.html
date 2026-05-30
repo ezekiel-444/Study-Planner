@@ -238,7 +238,7 @@ select option{background:var(--bg);color:var(--text-primary)}
   border-radius:var(--radius);backdrop-filter:blur(8px);
 }
 .empty-icon{font-size:2.5rem;display:block;margin-bottom:12px}
-/* Responsive */
+/*Responsive */
 @media(max-width:640px){
   main.content{margin:20px auto 40px}
   .form-grid{grid-template-columns:1fr}
@@ -318,11 +318,11 @@ select option{background:var(--bg);color:var(--text-primary)}
         <div class="form-grid">
           <div class="field">
             <label for="input-subject">Subject</label>
-            <input id="input-subject" type="text" placeholder="e.g. Mathematics" autocomplete="off"/>
+            <input id="input-subject" type="text" placeholder="e.g. Design Patterns" autocomplete="off"/>
           </div>
           <div class="field">
             <label for="input-title">Task Title</label>
-            <input id="input-title" type="text" placeholder="e.g. Chapter 5 exercises" autocomplete="off"/>
+            <input id="input-title" type="text" placeholder="e.g. Lecture 5 exercises" autocomplete="off"/>
           </div>
           <div class="field">
             <label for="input-deadline">Deadline</label>
@@ -330,7 +330,7 @@ select option{background:var(--bg);color:var(--text-primary)}
           </div>
           <div class="field">
             <label for="input-notes">Notes (optional)</label>
-            <input id="input-notes" type="text" placeholder="Any extra details…" autocomplete="off"/>
+            <input id="input-notes" type="text" placeholder="Add any extra details…" autocomplete="off"/>
           </div>
         </div>
         <div class="form-actions">
@@ -361,9 +361,9 @@ select option{background:var(--bg);color:var(--text-primary)}
 </div>
 
 <script>
-// ============================================================
+
 // models/Task.js — Factory Pattern
-// ============================================================
+
 class Task {
   constructor({ id, subject, title, deadline, status = 'pending', notes = '' }) {
     this.id = id;
@@ -381,7 +381,7 @@ class Task {
   isDone() { return this.status === 'done'; }
 }
 
-// Factory Pattern: one place for creation + validation
+//Factory Pattern: one place for creation + validation
 const TaskFactory = {
   create(data) {
     const errors = this.validate(data);
@@ -398,9 +398,9 @@ const TaskFactory = {
   }
 };
 
-// ============================================================
+
 // store/TaskStore.js — Singleton + Observer Pattern
-// ============================================================
+
 const TaskStore = (() => {
   const STORAGE_KEY = 'planner_tasks';
   let tasks = [];
@@ -417,7 +417,7 @@ const TaskStore = (() => {
   load();
 
   return {
-    // Observer: subscribe to changes
+    //Observer: subscribe to changes
     subscribe(fn) {
       listeners.push(fn);
       return () => { listeners = listeners.filter(l => l !== fn); };
@@ -444,9 +444,9 @@ const TaskStore = (() => {
   };
 })();
 
-// ============================================================
+
 // strategies/FilterStrategy.js — Strategy Pattern
-// ============================================================
+
 const FilterStrategies = {
   all:      { apply: tasks => tasks },
   pending:  { apply: tasks => tasks.filter(t => t.status === 'pending') },
@@ -461,9 +461,9 @@ class FilterContext {
   apply(tasks)   { return this._strategy.apply(tasks); }
 }
 
-// ============================================================
+
 // components/TaskComposite.js — Composite Pattern
-// ============================================================
+
 class TaskLeaf {
   constructor(task) { this.task = task; }
   getItems()  { return [this.task]; }
@@ -489,9 +489,9 @@ function buildSubjectTree(tasks) {
   return [...map.values()];
 }
 
-// ============================================================
+
 // ui/UIRenderer.js — Single Responsibility (SOLID)
-// ============================================================
+
 class UIRenderer {
   constructor() {
     this.filterCtx   = new FilterContext();
@@ -515,7 +515,7 @@ class UIRenderer {
     this.$cancelBtn.addEventListener('click', () => this._cancelEdit());
     this.$theme.addEventListener('click', () => this._toggleTheme());
 
-    // Observer: auto re-render on store changes
+    //Observer: auto re-render on store changes
     TaskStore.subscribe(() => this.render());
     this.render();
   }
@@ -662,9 +662,8 @@ class UIRenderer {
   }
 }
 
-// ============================================================
+
 // app.js — Entry Point
-// ============================================================
 (function boot() {
   if (localStorage.getItem('planner_theme') === 'dark') {
     document.body.classList.add('dark');
