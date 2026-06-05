@@ -4,7 +4,7 @@ A personal study task planner built for a Design Patterns course. Tasks are grou
 
 ## How to Run
 
-Open `index.html` in a modern browser, or with live server preview, with port url, or serve the folder with any static server:
+Open `index.html` in a modern browser, or with live server preview with port url, or serve the folder with any static server:
 
 ```bash
 npx serve .
@@ -12,7 +12,7 @@ npx serve .
 
 No build step or dependencies required.
 
-## Midterm 2 Requirements
+## Midterm  2 Requirements 
 
 | Requirement | Implementation |
 |---|---|
