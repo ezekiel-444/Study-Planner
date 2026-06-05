@@ -3,25 +3,58 @@
  * Factory Pattern: TaskFactory creates Task instances consistently.
  * Single Responsibility (SOLID): only defines/creates task data.
  */
+import { isBeforeToday, isToday, isWithinDays, parseDeadline, startOfToday, daysBetween } from '../utils/dateUtils.js';
 
 export class Task {
-  constructor({ id, subject, title, deadline, status = 'pending', notes = '' }) {
+  constructor({ id, subject, title, deadline, status = 'pending', notes = '', createdAt }) {
     this.id = id;
     this.subject = subject;
     this.title = title;
     this.deadline = deadline;
     this.status = status; // 'pending' | 'done'
     this.notes = notes;
-    this.createdAt = new Date().toISOString();
+    this.createdAt = createdAt ?? new Date().toISOString();
   }
 
   isOverdue() {
     if (this.status === 'done') return false;
-    return this.deadline && new Date(this.deadline) < new Date();
+    return isBeforeToday(this.deadline);
+  }
+
+  isDueToday() {
+    if (this.status === 'done') return false;
+    return isToday(this.deadline);
+  }
+
+  isDueThisWeek() {
+    if (this.status === 'done') return false;
+    return isWithinDays(this.deadline, 7);
   }
 
   isDone() {
     return this.status === 'done';
+  }
+
+  daysOverdue() {
+    if (!this.isOverdue()) return 0;
+    const deadline = parseDeadline(this.deadline);
+    return daysBetween(deadline, startOfToday());
+  }
+
+  toJSON() {
+    return {
+      id: this.id,
+      subject: this.subject,
+      title: this.title,
+      deadline: this.deadline,
+      status: this.status,
+      notes: this.notes,
+      createdAt: this.createdAt
+    };
+  }
+
+  static fromJSON(data) {
+    return new Task(data);
   }
 }
 
@@ -33,9 +66,8 @@ export const TaskFactory = {
     return new Task({ ...data, id: crypto.randomUUID() });
   },
 
-  // Used when restoring from localStorage (already have IDs)
   restore(data) {
-    return new Task(data);
+    return Task.fromJSON(data);
   },
 
   validate(data) {
