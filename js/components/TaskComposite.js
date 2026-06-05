@@ -1,11 +1,9 @@
 /**
  * Composite Pattern
  * Treats individual tasks and groups of tasks (by subject) uniformly.
- * Both TaskLeaf and TaskGroup share the same interface: { getItems(), getCount() }
- * This lets the renderer work with a single task or a whole subject group identically.
+ * Both TaskLeaf and TaskGroup share the same interface for traversal and stats.
  */
 
-// Leaf: wraps a single task
 export class TaskLeaf {
   constructor(task) {
     this.task = task;
@@ -22,9 +20,24 @@ export class TaskLeaf {
   getLabel() {
     return this.task.title;
   }
+
+  getCompletedCount() {
+    return this.task.isDone() ? 1 : 0;
+  }
+
+  getOverdueCount() {
+    return this.task.isOverdue() ? 1 : 0;
+  }
+
+  getPendingCount() {
+    return this.task.isDone() ? 0 : 1;
+  }
+
+  getCompletionRate() {
+    return this.task.isDone() ? 100 : 0;
+  }
 }
 
-// Composite: a named group of tasks (e.g., all tasks for "Math")
 export class TaskGroup {
   constructor(label) {
     this.label = label;
@@ -37,7 +50,6 @@ export class TaskGroup {
   }
 
   getItems() {
-    // Recursively collect all tasks from children
     return this._children.flatMap(c => c.getItems());
   }
 
@@ -48,12 +60,25 @@ export class TaskGroup {
   getLabel() {
     return this.label;
   }
+
+  getCompletedCount() {
+    return this._children.reduce((sum, c) => sum + c.getCompletedCount(), 0);
+  }
+
+  getOverdueCount() {
+    return this._children.reduce((sum, c) => sum + c.getOverdueCount(), 0);
+  }
+
+  getPendingCount() {
+    return this._children.reduce((sum, c) => sum + c.getPendingCount(), 0);
+  }
+
+  getCompletionRate() {
+    const total = this.getCount();
+    return total ? Math.round((this.getCompletedCount() / total) * 100) : 0;
+  }
 }
 
-/**
- * Builds a composite tree grouped by subject from a flat task array.
- * Returns an array of TaskGroup nodes (one per subject).
- */
 export function buildSubjectTree(tasks) {
   const map = new Map();
 
@@ -64,4 +89,18 @@ export function buildSubjectTree(tasks) {
   }
 
   return [...map.values()];
+}
+
+export function sortTasksForDisplay(tasks) {
+  return [...tasks].sort((a, b) => {
+    const aOverdue = a.isOverdue() ? 0 : 1;
+    const bOverdue = b.isOverdue() ? 0 : 1;
+    if (aOverdue !== bOverdue) return aOverdue - bOverdue;
+
+    const aDone = a.isDone() ? 1 : 0;
+    const bDone = b.isDone() ? 1 : 0;
+    if (aDone !== bDone) return aDone - bDone;
+
+    return (a.deadline || '').localeCompare(b.deadline || '');
+  });
 }

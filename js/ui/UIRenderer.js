@@ -1,14 +1,13 @@
 /**
  * UIRenderer
  * Single Responsibility (SOLID): only handles DOM rendering.
- * DRY: all HTML generation is centralized here.
- * Dependency Inversion (SOLID): depends on abstractions (store, filter context), not concretions.
+ * Observer Pattern: subscribes to TaskStore and re-renders on changes.
  */
-
 import { taskStore } from '../store/TaskStore.js';
 import { FilterContext, FilterStrategies } from '../strategies/FilterStrategy.js';
-import { buildSubjectTree } from '../components/TaskComposite.js';
+import { buildSubjectTree, sortTasksForDisplay } from '../components/TaskComposite.js';
 import { TaskFactory } from '../models/Task.js';
+import { formatDeadline } from '../utils/dateUtils.js';
 
 export class UIRenderer {
   constructor() {
@@ -20,9 +19,7 @@ export class UIRenderer {
     this._bindElements();
     this._bindEvents();
 
-    // Observer: re-render whenever store changes
     taskStore.subscribe(() => this.render());
-
     this.render();
   }
 
@@ -33,11 +30,19 @@ export class UIRenderer {
     this.filterSubject = document.getElementById('filter-subject');
     this.statsTotal = document.getElementById('stat-total');
     this.statsDone = document.getElementById('stat-done');
+    this.statsPending = document.getElementById('stat-pending');
     this.statsOverdue = document.getElementById('stat-overdue');
+    this.statsDueWeek = document.getElementById('stat-due-week');
+    this.statsRate = document.getElementById('stat-rate');
+    this.subjectStats = document.getElementById('subject-stats');
     this.formError = document.getElementById('form-error');
     this.submitBtn = document.getElementById('submit-btn');
     this.cancelEditBtn = document.getElementById('cancel-edit-btn');
     this.themeToggle = document.getElementById('theme-toggle');
+    this.exportBtn = document.getElementById('export-btn');
+    this.importBtn = document.getElementById('import-btn');
+    this.importInput = document.getElementById('import-input');
+    this.undoBtn = document.getElementById('undo-btn');
   }
 
   _bindEvents() {
@@ -46,9 +51,12 @@ export class UIRenderer {
     this.filterSubject.addEventListener('change', () => this._applyFilters());
     this.cancelEditBtn.addEventListener('click', () => this._cancelEdit());
     this.themeToggle.addEventListener('click', () => this._toggleTheme());
+    this.exportBtn.addEventListener('click', () => this._exportBackup());
+    this.importBtn.addEventListener('click', () => this.importInput.click());
+    this.importInput.addEventListener('change', (e) => this._importBackup(e));
+    this.undoBtn.addEventListener('click', () => this._undoDelete());
   }
 
-  // DRY: one method builds filter strategy from current UI state
   _applyFilters() {
     this.activeStatusFilter = this.filterStatus.value;
     this.activeSubjectFilter = this.filterSubject.value;
@@ -67,7 +75,6 @@ export class UIRenderer {
     const data = this._getFormData();
 
     if (this.editingId) {
-      // Validate manually for edits (Factory.validate is DRY)
       const errors = TaskFactory.validate(data);
       if (errors.length) return this._showError(errors.join(', '));
       taskStore.update(this.editingId, data);
@@ -129,17 +136,88 @@ export class UIRenderer {
     localStorage.setItem('planner_theme', isDark ? 'dark' : 'light');
   }
 
+  _exportBackup() {
+    const json = taskStore.exportBackup();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `study-planner-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async _importBackup(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const json = await file.text();
+      taskStore.importBackup(json);
+      this._showError('');
+    } catch (err) {
+      this._showError(err.message || 'Could not import backup file');
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  _undoDelete() {
+    const restored = taskStore.undoLastRemove();
+    if (!restored) {
+      this._showError('Nothing to undo');
+      setTimeout(() => this._showError(''), 2000);
+    }
+  }
+
   render() {
     const tasks = taskStore.getAll();
     this._renderStats(taskStore.getStats());
+    this._renderSubjectStats(taskStore.getSubjectStats());
     this._renderSubjectFilter(taskStore.getSubjects());
     this._renderList(tasks);
   }
 
-  _renderStats({ total, completed, overdue }) {
+  _renderStats({ total, completed, pending, overdue, dueThisWeek, completionRate }) {
     this.statsTotal.textContent = total;
     this.statsDone.textContent = completed;
+    this.statsPending.textContent = pending;
     this.statsOverdue.textContent = overdue;
+    this.statsDueWeek.textContent = dueThisWeek;
+    this.statsRate.textContent = `${completionRate}%`;
+  }
+
+  _renderSubjectStats(rows) {
+    if (!rows.length) {
+      this.subjectStats.innerHTML = '<p class="subject-stats-empty">Add tasks to see per-subject statistics.</p>';
+      return;
+    }
+
+    this.subjectStats.innerHTML = `
+      <table class="subject-stats-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Total</th>
+            <th>Done</th>
+            <th>Pending</th>
+            <th>Overdue</th>
+            <th>Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(row => `
+            <tr>
+              <td>${row.subject}</td>
+              <td>${row.total}</td>
+              <td>${row.completed}</td>
+              <td>${row.pending}</td>
+              <td class="${row.overdue ? 'cell-overdue' : ''}">${row.overdue}</td>
+              <td>${row.completionRate}%</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
   }
 
   _renderSubjectFilter(subjects) {
@@ -149,9 +227,7 @@ export class UIRenderer {
   }
 
   _renderList(allTasks) {
-    const filtered = this.filterContext.apply(allTasks);
-
-    // Use Composite to group by subject for display
+    const filtered = sortTasksForDisplay(this.filterContext.apply(allTasks));
     const groups = buildSubjectTree(filtered);
 
     if (!groups.length) {
@@ -162,7 +238,6 @@ export class UIRenderer {
       return;
     }
 
-    // DRY: one render helper for task cards
     this.taskList.innerHTML = groups.map(group => `
       <div class="subject-group">
         <h3 class="subject-label">
@@ -174,7 +249,6 @@ export class UIRenderer {
       </div>
     `).join('');
 
-    // Bind card buttons after render
     this.taskList.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
         const { action, id } = btn.dataset;
@@ -191,13 +265,14 @@ export class UIRenderer {
 
   _taskCard(task) {
     const overdueClass = task.isOverdue() ? 'overdue' : '';
+    const dueTodayClass = task.isDueToday() ? 'due-today' : '';
     const doneClass = task.isDone() ? 'done' : '';
-    const deadlineLabel = task.deadline
-      ? new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-      : '';
+    const deadlineLabel = formatDeadline(task.deadline);
+    const daysOverdue = task.daysOverdue();
+    const overdueLabel = daysOverdue === 1 ? '1 day overdue' : `${daysOverdue} days overdue`;
 
     return `
-      <div class="task-card ${doneClass} ${overdueClass}">
+      <div class="task-card ${doneClass} ${overdueClass} ${dueTodayClass}">
         <div class="task-check">
           <button class="check-btn ${task.isDone() ? 'checked' : ''}" data-action="toggle" data-id="${task.id}" title="Toggle done">
             ${task.isDone() ? '✓' : ''}
@@ -208,7 +283,8 @@ export class UIRenderer {
           ${task.notes ? `<div class="task-notes">${task.notes}</div>` : ''}
           <div class="task-meta">
             ${deadlineLabel ? `<span class="deadline-badge ${overdueClass}">📅 ${deadlineLabel}</span>` : ''}
-            ${task.isOverdue() ? '<span class="overdue-badge">Overdue</span>' : ''}
+            ${task.isOverdue() ? `<span class="overdue-badge">${overdueLabel}</span>` : ''}
+            ${task.isDueToday() && !task.isDone() ? '<span class="due-today-badge">Due Today</span>' : ''}
             ${task.isDone() ? '<span class="done-badge">Done</span>' : ''}
           </div>
         </div>

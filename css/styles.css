@@ -249,6 +249,31 @@ body.dark header.topbar { background: rgba(20,26,50,0.55); }
 }
 #theme-toggle:hover { transform: rotate(20deg) scale(1.08); box-shadow: var(--shadow-lg); }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+
+.btn-ghost:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
 main.content {
   flex: 1;
   max-width: 900px;
@@ -267,6 +292,10 @@ main.content {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .stats-bar { grid-template-columns: repeat(6, 1fr); }
 }
 
 .stat-card {
@@ -297,7 +326,10 @@ main.content {
   color: var(--text-primary);
 }
 .stat-card.stat-done .stat-value { color: var(--green); }
+.stat-card.stat-pending .stat-value { color: var(--accent); }
 .stat-card.stat-overdue .stat-value { color: var(--red); }
+.stat-card.stat-due-week .stat-value { color: var(--yellow); }
+.stat-card.stat-rate .stat-value { font-size: 1.6rem; }
 
 /* ============================================================
    Glass Cards
@@ -620,6 +652,22 @@ textarea { resize: vertical; min-height: 70px; }
   letter-spacing: 0.05em;
 }
 
+.due-today-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--yellow);
+  background: var(--yellow-bg);
+  border-radius: 20px;
+  padding: 2px 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.task-card.due-today:not(.overdue) {
+  border-color: var(--yellow);
+  background: rgba(245, 166, 35, 0.06);
+}
+
 .task-actions {
   display: flex;
   gap: 6px;
@@ -653,6 +701,42 @@ textarea { resize: vertical; min-height: 70px; }
 }
 .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 12px; }
 .empty-state p { font-size: 0.92rem; }
+
+/* Subject Statistics Table */
+.subject-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.subject-stats-table th,
+.subject-stats-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.subject-stats-table th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.subject-stats-table tbody tr:hover {
+  background: var(--accent-light);
+}
+
+.subject-stats-table .cell-overdue {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.subject-stats-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
 
 /* ============================================================
    Responsive
