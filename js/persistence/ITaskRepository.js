@@ -1,5 +1,5 @@
 /**
- * Repository Pattern — contract for task persistence.
+ * Repository Pattern — this is the contract for  the     task persistence.
  * TaskStore depends on this abstraction, not on localStorage directly (DIP).
  */
 export class ITaskRepository {

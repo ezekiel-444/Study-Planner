@@ -280,7 +280,7 @@ export class UIRenderer {
         </div>
         <div class="task-body">
           <div class="task-title">${task.title}</div>
-          ${task.notes ? `<div class="task-notes">${task.notes}</div>` : ''}
+          ${task.notes ? `<div class="task-notes">${task.notes}</div>`   : ''}
           <div class="task-meta">
             ${deadlineLabel ? `<span class="deadline-badge ${overdueClass}">📅 ${deadlineLabel}</span>` : ''}
             ${task.isOverdue() ? `<span class="overdue-badge">${overdueLabel}</span>` : ''}

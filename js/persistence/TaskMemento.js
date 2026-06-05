@@ -1,5 +1,5 @@
 /**
- * Memento Pattern — captures and restores TaskStore state for undo/backup.
+ * Memento Pattern — this one captures and restores TaskStore state for undo/backup.
  */
 import { TaskFactory } from '../models/Task.js';
 

@@ -1,5 +1,5 @@
 /**
- * Repository Pattern — localStorage implementation with schema versioning.
+ * Repository Pattern — this is for localStorage implementation with schema versioning.
  */
 import { ITaskRepository } from './ITaskRepository.js';
 
