@@ -1,4 +1,6 @@
-/* this is the default light theme */
+/* ============================================================
+   CSS Custom Properties — Light Theme (default)
+   ============================================================ */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap');
 
 :root {
@@ -67,7 +69,9 @@ body {
   overflow-x: hidden;
 }
 
-/*the background (skY) */
+/* ============================================================
+   Scenic Sky Background
+   ============================================================ */
 .sky-bg {
   position: fixed;
   inset: 0;
@@ -83,7 +87,7 @@ body {
   transition: background 0.5s;
 }
 
-/*Clouds*/
+/* Clouds */
 .cloud {
   position: absolute;
   border-radius: 100px;
@@ -103,7 +107,7 @@ body.dark .cloud { background: rgba(80,100,180,0.18); }
   to { transform: translateX(calc(100vw + 400px)); }
 }
 
-/*hills*/
+/* Rolling hills */
 .hills {
   position: absolute;
   bottom: 0;
@@ -141,7 +145,7 @@ body.dark .hill-1 { background: linear-gradient(180deg, #2a3560 0%, #1e2848 100%
 body.dark .hill-2 { background: linear-gradient(180deg, #222e58 0%, #1a2445 100%); opacity: 0.7; }
 body.dark .hill-3 { background: linear-gradient(180deg, #263055 0%, #1d2950 100%); opacity: 0.6; }
 
-/*City silhouette*/
+/* City silhouette */
 .city {
   position: absolute;
   bottom: 0;
@@ -161,7 +165,7 @@ body.dark .city { opacity: 0.28; }
   height: var(--h);
 }
 
-/*Birds*/
+/* Birds */
 .bird {
   position: absolute;
   font-size: 11px;
@@ -178,7 +182,7 @@ body.dark .bird { opacity: 0.35; }
   to { transform: translateX(110vw); }
 }
 
-/*Sun / Moon*/
+/* Sun / Moon */
 .sun {
   position: absolute;
   top: 7%;
@@ -196,7 +200,9 @@ body.dark .sun {
   top: 8%; right: 11%;
 }
 
-/*layout display */
+/* ============================================================
+   Layout
+   ============================================================ */
 .app-layout {
   position: relative;
   z-index: 1;
@@ -243,6 +249,31 @@ body.dark header.topbar { background: rgba(20,26,50,0.55); }
 }
 #theme-toggle:hover { transform: rotate(20deg) scale(1.08); box-shadow: var(--shadow-lg); }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-ghost {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+
+.btn-ghost:hover {
+  background: var(--accent-light);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
 main.content {
   flex: 1;
   max-width: 900px;
@@ -254,11 +285,17 @@ main.content {
   gap: 24px;
 }
 
-/*Stats bar*/
+/* ============================================================
+   Stats Bar
+   ============================================================ */
 .stats-bar {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .stats-bar { grid-template-columns: repeat(6, 1fr); }
 }
 
 .stat-card {
@@ -289,9 +326,14 @@ main.content {
   color: var(--text-primary);
 }
 .stat-card.stat-done .stat-value { color: var(--green); }
+.stat-card.stat-pending .stat-value { color: var(--accent); }
 .stat-card.stat-overdue .stat-value { color: var(--red); }
+.stat-card.stat-due-week .stat-value { color: var(--yellow); }
+.stat-card.stat-rate .stat-value { font-size: 1.6rem; }
 
-/*cards*/
+/* ============================================================
+   Glass Cards
+   ============================================================ */
 .glass-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -314,7 +356,9 @@ main.content {
 }
 .card-title .icon { font-size: 1.1em; }
 
-/* form*/
+/* ============================================================
+   Form
+   ============================================================ */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -422,7 +466,9 @@ textarea { resize: vertical; min-height: 70px; }
   display: none;
 }
 
-/* Filters */
+/* ============================================================
+   Filters
+   ============================================================ */
 .filters-row {
   display: flex;
   gap: 12px;
@@ -447,9 +493,9 @@ textarea { resize: vertical; min-height: 70px; }
   margin-right: 2px;
 }
 
-/*
+/* ============================================================
    Task List
-   */
+   ============================================================ */
 #task-list {
   display: flex;
   flex-direction: column;
@@ -491,7 +537,7 @@ textarea { resize: vertical; min-height: 70px; }
   margin-left: auto;
 }
 
-/*Task Cards */
+/* Task Cards */
 .task-card {
   background: var(--surface);
   border: 1.5px solid var(--border);
@@ -526,7 +572,7 @@ textarea { resize: vertical; min-height: 70px; }
   background: rgba(247,106,106,0.05);
 }
 
-/*Check Button */
+/* Check Button */
 .check-btn {
   width: 26px; height: 26px;
   border-radius: 50%;
@@ -575,7 +621,6 @@ textarea { resize: vertical; min-height: 70px; }
   flex-wrap: wrap;
 }
 
-
 .deadline-badge {
   font-size: 0.75rem;
   color: var(--text-muted);
@@ -596,8 +641,6 @@ textarea { resize: vertical; min-height: 70px; }
   letter-spacing: 0.05em;
 }
 
-
-
 .done-badge {
   font-size: 0.72rem;
   font-weight: 700;
@@ -607,6 +650,22 @@ textarea { resize: vertical; min-height: 70px; }
   padding: 2px 9px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.due-today-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--yellow);
+  background: var(--yellow-bg);
+  border-radius: 20px;
+  padding: 2px 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.task-card.due-today:not(.overdue) {
+  border-color: var(--yellow);
+  background: rgba(245, 166, 35, 0.06);
 }
 
 .task-actions {
@@ -630,7 +689,7 @@ textarea { resize: vertical; min-height: 70px; }
 }
 .btn-icon:hover { background: var(--accent-light); transform: scale(1.15); }
 
-/*Empty State */
+/* Empty State */
 .empty-state {
   text-align: center;
   padding: 48px 24px;
@@ -643,7 +702,45 @@ textarea { resize: vertical; min-height: 70px; }
 .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 12px; }
 .empty-state p { font-size: 0.92rem; }
 
-/* Responsive */
+/* Subject Statistics Table */
+.subject-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.subject-stats-table th,
+.subject-stats-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.subject-stats-table th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.subject-stats-table tbody tr:hover {
+  background: var(--accent-light);
+}
+
+.subject-stats-table .cell-overdue {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.subject-stats-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
 @media (max-width: 640px) {
   main.content { margin: 20px auto 40px; }
   .form-grid { grid-template-columns: 1fr; }
