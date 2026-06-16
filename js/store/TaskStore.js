@@ -62,7 +62,14 @@ class TaskStore {
     const idx = this._tasks.findIndex(t => t.id === id);
     if (idx === -1) return;
 
-    Object.assign(this._tasks[idx], changes);
+    const current = this._tasks[idx].toJSON();
+    const { status, id: _id, createdAt, ...editable } = changes;
+    const merged = { ...current, ...editable };
+
+    const errors = TaskFactory.validate(merged);
+    if (errors.length) throw new Error(errors.join(', '));
+
+    Object.assign(this._tasks[idx], editable);
     this._persist();
     this._notify();
   }
@@ -120,7 +127,16 @@ class TaskStore {
 
   importBackup(json) {
     const data = this._repository.importJson(json);
-    this._tasks = data.map(t => TaskFactory.restore(t));
+
+    const tasks = data.map((raw, index) => {
+      const errors = TaskFactory.validate(raw);
+      if (errors.length) {
+        throw new Error(`Task ${index + 1}: ${errors.join(', ')}`);
+      }
+      return TaskFactory.restore(raw);
+    });
+
+    this._tasks = tasks;
     this._persist();
     this._notify();
   }

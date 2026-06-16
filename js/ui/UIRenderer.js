@@ -4,17 +4,18 @@
  * Observer Pattern: subscribes to TaskStore and re-renders on changes.
  */
 import { taskStore } from '../store/TaskStore.js';
-import { FilterContext, FilterStrategies } from '../strategies/FilterStrategy.js';
+import { applyCombinedFilters } from '../strategies/FilterStrategy.js';
 import { buildSubjectTree, sortTasksForDisplay } from '../components/TaskComposite.js';
 import { TaskFactory } from '../models/Task.js';
 import { formatDeadline } from '../utils/dateUtils.js';
+import { escapeHtml } from '../utils/domUtils.js';
 
 export class UIRenderer {
   constructor() {
-    this.filterContext = new FilterContext();
-    this.activeSubjectFilter = null;
+    this.activeSubjectFilter = '';
     this.activeStatusFilter = 'all';
     this.editingId = null;
+    this._toastTimer = null;
 
     this._bindElements();
     this._bindEvents();
@@ -28,10 +29,12 @@ export class UIRenderer {
     this.form = document.getElementById('task-form');
     this.filterStatus = document.getElementById('filter-status');
     this.filterSubject = document.getElementById('filter-subject');
+    this.filterSummary = document.getElementById('filter-summary');
     this.statsTotal = document.getElementById('stat-total');
     this.statsDone = document.getElementById('stat-done');
     this.statsPending = document.getElementById('stat-pending');
     this.statsOverdue = document.getElementById('stat-overdue');
+    this.statsDueToday = document.getElementById('stat-due-today');
     this.statsDueWeek = document.getElementById('stat-due-week');
     this.statsRate = document.getElementById('stat-rate');
     this.subjectStats = document.getElementById('subject-stats');
@@ -43,6 +46,7 @@ export class UIRenderer {
     this.importBtn = document.getElementById('import-btn');
     this.importInput = document.getElementById('import-input');
     this.undoBtn = document.getElementById('undo-btn');
+    this.toast = document.getElementById('toast');
   }
 
   _bindEvents() {
@@ -55,19 +59,35 @@ export class UIRenderer {
     this.importBtn.addEventListener('click', () => this.importInput.click());
     this.importInput.addEventListener('change', (e) => this._importBackup(e));
     this.undoBtn.addEventListener('click', () => this._undoDelete());
+
+    this.taskList.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+
+      const { action, id } = btn.dataset;
+      if (action === 'toggle') taskStore.toggle(id);
+      if (action === 'delete') this._confirmDelete(id);
+      if (action === 'edit') this._startEdit(id);
+    });
   }
 
   _applyFilters() {
     this.activeStatusFilter = this.filterStatus.value;
     this.activeSubjectFilter = this.filterSubject.value;
+    this._renderList(taskStore.getAll());
+    this._updateFilterSummary();
+  }
 
-    if (this.activeSubjectFilter) {
-      this.filterContext.setStrategy(FilterStrategies.bySubject(this.activeSubjectFilter));
-    } else {
-      this.filterContext.setStrategy(FilterStrategies[this.activeStatusFilter] || FilterStrategies.all);
+  _updateFilterSummary() {
+    const statusLabel = this.filterStatus.options[this.filterStatus.selectedIndex].text;
+    const subjectLabel = this.activeSubjectFilter || 'All Subjects';
+
+    if (this.activeStatusFilter === 'all' && !this.activeSubjectFilter) {
+      this.filterSummary.textContent = 'Showing all tasks';
+      return;
     }
 
-    this._renderList(taskStore.getAll());
+    this.filterSummary.textContent = `Showing: ${statusLabel} · ${subjectLabel}`;
   }
 
   _handleSubmit(e) {
@@ -77,13 +97,20 @@ export class UIRenderer {
     if (this.editingId) {
       const errors = TaskFactory.validate(data);
       if (errors.length) return this._showError(errors.join(', '));
-      taskStore.update(this.editingId, data);
-      this._cancelEdit();
+
+      try {
+        taskStore.update(this.editingId, data);
+        this._cancelEdit();
+        this._showToast('Task updated successfully');
+      } catch (err) {
+        this._showError(err.message);
+      }
     } else {
       try {
         taskStore.add(data);
         this.form.reset();
         this._showError('');
+        this._showToast('Task added successfully');
       } catch (err) {
         this._showError(err.message);
       }
@@ -95,14 +122,26 @@ export class UIRenderer {
       subject: document.getElementById('input-subject').value.trim(),
       title: document.getElementById('input-title').value.trim(),
       deadline: document.getElementById('input-deadline').value,
-      notes: document.getElementById('input-notes').value.trim(),
-      status: document.getElementById('input-status')?.value || 'pending'
+      notes: document.getElementById('input-notes').value.trim()
     };
   }
 
   _showError(msg) {
     this.formError.textContent = msg;
     this.formError.style.display = msg ? 'block' : 'none';
+  }
+
+  _showToast(message, type = 'success') {
+    if (!this.toast) return;
+
+    clearTimeout(this._toastTimer);
+    this.toast.textContent = message;
+    this.toast.className = `toast toast-${type} toast-visible`;
+    this.toast.setAttribute('role', 'status');
+
+    this._toastTimer = setTimeout(() => {
+      this.toast.classList.remove('toast-visible');
+    }, 2800);
   }
 
   _startEdit(id) {
@@ -118,6 +157,7 @@ export class UIRenderer {
     this.submitBtn.textContent = 'Save Changes';
     this.cancelEditBtn.style.display = 'inline-flex';
     document.getElementById('form-title').textContent = 'Edit Task';
+    this._showError('');
     document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
   }
 
@@ -145,18 +185,29 @@ export class UIRenderer {
     link.download = `study-planner-backup-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
+    this._showToast('Backup exported');
   }
 
   async _importBackup(event) {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const taskCount = taskStore.getAll().length;
+    const message = taskCount
+      ? `Import will replace all ${taskCount} current task(s). Continue?`
+      : 'Import tasks from this backup file?';
+
+    if (!confirm(message)) {
+      event.target.value = '';
+      return;
+    }
+
     try {
       const json = await file.text();
       taskStore.importBackup(json);
-      this._showError('');
+      this._showToast(`Imported ${taskStore.getAll().length} task(s)`);
     } catch (err) {
-      this._showError(err.message || 'Could not import backup file');
+      this._showToast(err.message || 'Could not import backup file', 'error');
     } finally {
       event.target.value = '';
     }
@@ -164,9 +215,10 @@ export class UIRenderer {
 
   _undoDelete() {
     const restored = taskStore.undoLastRemove();
-    if (!restored) {
-      this._showError('Nothing to undo');
-      setTimeout(() => this._showError(''), 2000);
+    if (restored) {
+      this._showToast('Delete undone');
+    } else {
+      this._showToast('Nothing to undo', 'error');
     }
   }
 
@@ -176,13 +228,15 @@ export class UIRenderer {
     this._renderSubjectStats(taskStore.getSubjectStats());
     this._renderSubjectFilter(taskStore.getSubjects());
     this._renderList(tasks);
+    this._updateFilterSummary();
   }
 
-  _renderStats({ total, completed, pending, overdue, dueThisWeek, completionRate }) {
+  _renderStats({ total, completed, pending, overdue, dueToday, dueThisWeek, completionRate }) {
     this.statsTotal.textContent = total;
     this.statsDone.textContent = completed;
     this.statsPending.textContent = pending;
     this.statsOverdue.textContent = overdue;
+    this.statsDueToday.textContent = dueToday;
     this.statsDueWeek.textContent = dueThisWeek;
     this.statsRate.textContent = `${completionRate}%`;
   }
@@ -208,7 +262,7 @@ export class UIRenderer {
         <tbody>
           ${rows.map(row => `
             <tr>
-              <td>${row.subject}</td>
+              <td>${escapeHtml(row.subject)}</td>
               <td>${row.total}</td>
               <td>${row.completed}</td>
               <td>${row.pending}</td>
@@ -223,17 +277,22 @@ export class UIRenderer {
   _renderSubjectFilter(subjects) {
     const current = this.filterSubject.value;
     this.filterSubject.innerHTML = '<option value="">All Subjects</option>' +
-      subjects.map(s => `<option value="${s}" ${s === current ? 'selected' : ''}>${s}</option>`).join('');
+      subjects.map(s =>
+        `<option value="${escapeHtml(s)}" ${s === current ? 'selected' : ''}>${escapeHtml(s)}</option>`
+      ).join('');
   }
 
   _renderList(allTasks) {
-    const filtered = sortTasksForDisplay(this.filterContext.apply(allTasks));
+    const filtered = sortTasksForDisplay(
+      applyCombinedFilters(allTasks, this.activeStatusFilter, this.activeSubjectFilter)
+    );
     const groups = buildSubjectTree(filtered);
 
     if (!groups.length) {
+      const hasTasks = allTasks.length > 0;
       this.taskList.innerHTML = `<div class="empty-state">
-        <span class="empty-icon">📋</span>
-        <p>No tasks here yet. Add one above!</p>
+        <span class="empty-icon">${hasTasks ? '🔍' : '📋'}</span>
+        <p>${hasTasks ? 'No tasks match the current filters.' : 'No tasks yet. Add one above!'}</p>
       </div>`;
       return;
     }
@@ -242,25 +301,19 @@ export class UIRenderer {
       <div class="subject-group">
         <h3 class="subject-label">
           <span class="subject-dot"></span>
-          ${group.getLabel()}
+          ${escapeHtml(group.getLabel())}
           <span class="subject-count">${group.getCount()}</span>
         </h3>
         ${group.getItems().map(task => this._taskCard(task)).join('')}
       </div>
     `).join('');
-
-    this.taskList.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const { action, id } = btn.dataset;
-        if (action === 'toggle') taskStore.toggle(id);
-        if (action === 'delete') this._confirmDelete(id);
-        if (action === 'edit') this._startEdit(id);
-      });
-    });
   }
 
   _confirmDelete(id) {
-    if (confirm('Delete this task?')) taskStore.remove(id);
+    if (confirm('Delete this task?')) {
+      taskStore.remove(id);
+      this._showToast('Task deleted — use Undo to restore');
+    }
   }
 
   _taskCard(task) {
@@ -274,23 +327,23 @@ export class UIRenderer {
     return `
       <div class="task-card ${doneClass} ${overdueClass} ${dueTodayClass}">
         <div class="task-check">
-          <button class="check-btn ${task.isDone() ? 'checked' : ''}" data-action="toggle" data-id="${task.id}" title="Toggle done">
+          <button class="check-btn ${task.isDone() ? 'checked' : ''}" data-action="toggle" data-id="${task.id}" title="Mark as ${task.isDone() ? 'not done' : 'done'}" aria-label="Mark as ${task.isDone() ? 'not done' : 'done'}">
             ${task.isDone() ? '✓' : ''}
           </button>
         </div>
         <div class="task-body">
-          <div class="task-title">${task.title}</div>
-          ${task.notes ? `<div class="task-notes">${task.notes}</div>`   : ''}
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          ${task.notes ? `<div class="task-notes">${escapeHtml(task.notes)}</div>` : ''}
           <div class="task-meta">
-            ${deadlineLabel ? `<span class="deadline-badge ${overdueClass}">📅 ${deadlineLabel}</span>` : ''}
-            ${task.isOverdue() ? `<span class="overdue-badge">${overdueLabel}</span>` : ''}
+            ${deadlineLabel ? `<span class="deadline-badge ${overdueClass}">📅 ${escapeHtml(deadlineLabel)}</span>` : ''}
+            ${task.isOverdue() ? `<span class="overdue-badge">${escapeHtml(overdueLabel)}</span>` : ''}
             ${task.isDueToday() && !task.isDone() ? '<span class="due-today-badge">Due Today</span>' : ''}
             ${task.isDone() ? '<span class="done-badge">Done</span>' : ''}
           </div>
         </div>
         <div class="task-actions">
-          <button class="btn-icon edit-btn" data-action="edit" data-id="${task.id}" title="Edit">✏️</button>
-          <button class="btn-icon delete-btn" data-action="delete" data-id="${task.id}" title="Delete">🗑️</button>
+          <button class="btn-icon edit-btn" data-action="edit" data-id="${task.id}" title="Edit" aria-label="Edit task">✏️</button>
+          <button class="btn-icon delete-btn" data-action="delete" data-id="${task.id}" title="Delete" aria-label="Delete task">🗑️</button>
         </div>
       </div>`;
   }

@@ -46,3 +46,15 @@ export class FilterContext {
     return this._strategy.apply(tasks);
   }
 }
+
+/** Applies status filter first, then optional subject filter (both can be active). */
+export function applyCombinedFilters(tasks, statusKey = 'all', subject = '') {
+  const statusStrategy = FilterStrategies[statusKey] || FilterStrategies.all;
+  let result = statusStrategy.apply(tasks);
+
+  if (subject) {
+    result = FilterStrategies.bySubject(subject).apply(result);
+  }
+
+  return result;
+}
