@@ -4,6 +4,7 @@
  * Both TaskLeaf and TaskGroup share the same interface for traversal and stats.
  */
 
+// Represents a single, individual assignment
 export class TaskLeaf {
   constructor(task) {
     this.task = task;
@@ -21,6 +22,7 @@ export class TaskLeaf {
     return this.task.title;
   }
 
+  // Returns individual data (1 if completed, 0 if not)
   getCompletedCount() {
     return this.task.isDone() ? 1 : 0;
   }
@@ -38,6 +40,7 @@ export class TaskLeaf {
   }
 }
 
+//Represents a subject category folder holding multiple tasks
 export class TaskGroup {
   constructor(label) {
     this.label = label;
@@ -53,6 +56,7 @@ export class TaskGroup {
     return this._children.flatMap(c => c.getItems());
   }
 
+  //Uses array reduction to automatically total up data from all internal children
   getCount() {
     return this._children.reduce((sum, c) => sum + c.getCount(), 0);
   }
@@ -79,6 +83,7 @@ export class TaskGroup {
   }
 }
 
+//Automatically buckets flat task data into our Composite tree categories
 export function buildSubjectTree(tasks) {
   const map = new Map();
 
@@ -91,6 +96,7 @@ export function buildSubjectTree(tasks) {
   return [...map.values()];
 }
 
+// An algorithmic priority ladder that ranks tasks (Overdue -> Pending -> Timeline)
 export function sortTasksForDisplay(tasks) {
   return [...tasks].sort((a, b) => {
     const aOverdue = a.isOverdue() ? 0 : 1;
