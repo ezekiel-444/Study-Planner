@@ -5,6 +5,7 @@
  */
 import { isBeforeToday, isToday, isWithinDays, parseDeadline, startOfToday, daysBetween } from '../utils/dateUtils.js';
 
+//This class holds internal state and takes its own backups
 export class Task {
   constructor({ id, subject, title, deadline, status = 'pending', notes = '', createdAt }) {
     this.id = id;
@@ -41,6 +42,7 @@ export class Task {
     return daysBetween(deadline, startOfToday());
   }
 
+  //Saves current state snapshot as clean text data
   toJSON() {
     return {
       id: this.id,
@@ -53,17 +55,18 @@ export class Task {
     };
   }
 
+  // Rebuilds instance back safely from a text snapshot
   static fromJSON(data) {
     return new Task(data);
   }
 }
 
-// Factory Pattern: centralizes creation logic, validates, assigns IDs
+//Centralized location to validate entries and create valid tasks safely
 export const TaskFactory = {
   create(data) {
-    const errors = this.validate(data);
+    const errors = this.validate(data); // Implements validation rules before building
     if (errors.length) throw new Error(errors.join(', '));
-    return new Task({ ...data, id: crypto.randomUUID() });
+    return new Task({ ...data, id: crypto.randomUUID() }); // Securely injects Unique ID
   },
 
   restore(data) {
