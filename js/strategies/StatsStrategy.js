@@ -1,6 +1,3 @@
-/**
- * Strategy Pattern — different ways to compute statistics.
- */
 import { buildSubjectTree } from '../components/TaskComposite.js';
 
 export const StatsStrategies = {
