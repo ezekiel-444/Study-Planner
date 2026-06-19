@@ -1,8 +1,4 @@
-/**
- * DOM helpers for safe rendering.
- */
-
-export function escapeHtml(text) {
+export const escapeHtml = text => {
   if (text == null) return '';
   return String(text)
     .replace(/&/g, '&amp;')
@@ -10,4 +6,4 @@ export function escapeHtml(text) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
+};

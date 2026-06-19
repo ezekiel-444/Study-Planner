@@ -1,53 +1,47 @@
-/**
- * Shared date helpers for deadline comparisons.
- * Compares calendar days in local time to avoid timezone bugs with <input type="date">.
- */
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
-export function parseDeadline(deadlineStr) {
-  if (!deadlineStr) return null;
-  const normalized = deadlineStr.includes('T') ? deadlineStr : `${deadlineStr}T00:00:00`;
-  return new Date(normalized);
-}
+export const parseDeadline = str => {
+  if (!str) return null;
+  return new Date(str.includes('T') ? str : `${str}T00:00:00`);
+};
 
-export function startOfToday() {
+export const startOfToday = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return today;
-}
+};
 
-export function daysBetween(earlier, later) {
-  return Math.floor((later - earlier) / (1000 * 60 * 60 * 24));
-}
+export const daysBetween = (earlier, later) =>
+  Math.floor((later - earlier) / MS_PER_DAY);
 
-export function isBeforeToday(deadlineStr) {
-  const deadline = parseDeadline(deadlineStr);
-  if (!deadline) return false;
-  return deadline < startOfToday();
-}
+export const isBeforeToday = str => {
+  const deadline = parseDeadline(str);
+  return deadline ? deadline < startOfToday() : false;
+};
 
-export function isToday(deadlineStr) {
-  const deadline = parseDeadline(deadlineStr);
+export const isToday = str => {
+  const deadline = parseDeadline(str);
   if (!deadline) return false;
   const today = startOfToday();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   return deadline >= today && deadline < tomorrow;
-}
+};
 
-export function isWithinDays(deadlineStr, days) {
-  const deadline = parseDeadline(deadlineStr);
+export const isWithinDays = (str, days) => {
+  const deadline = parseDeadline(str);
   if (!deadline) return false;
   const today = startOfToday();
   const end = new Date(today);
   end.setDate(end.getDate() + days);
   return deadline >= today && deadline < end;
-}
+};
 
-export function formatDeadline(deadlineStr) {
-  if (!deadlineStr) return '';
-  return parseDeadline(deadlineStr).toLocaleDateString('en-US', {
+export const formatDeadline = str => {
+  if (!str) return '';
+  return parseDeadline(str).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric'
   });
-}
+};
