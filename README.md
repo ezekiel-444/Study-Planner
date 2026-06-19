@@ -5,39 +5,25 @@ A personal study task manager built for a Design Patterns course. Organize tasks
 ## How to Run (read this first)
 
 All updated files live inside the **`Study-Planner`** folder. If you open the wrong file, you will see the old layout or broken scripts.
-
-### Option A — Recommended (local server)
-
-1. Double-click **`START.bat`** in the project root folder:
-   `C:\Users\Salo\OneDrive\Desktop\study_planner_final\START.bat`
-2. Wait until the terminal shows a URL.
-3. Open **http://localhost:3000** in Chrome, Edge, or Firefox.
-
-Or run manually:
+run manually:
 
 ```bash
 cd Study-Planner
 npx serve . -p 3000
 ```
 
-### Option B — Open the HTML file directly
+### Open the HTML file directly
 
-Open this exact file in your browser:
-
-`C:\Users\Salo\OneDrive\Desktop\study_planner_final\Study-Planner\index.html`
-
-You can also open `study_planner_final\index.html` — it redirects to the folder above.
+Open index html file in your browser.
 
 > **Tip:** After changes, hard-refresh the page: **Ctrl + Shift + R** (clears cached CSS/JS).
 
 ### Where the new files are
 
-| What | Path |
-|---|---|
+| What            | Path                       |
+| --------------- | -------------------------- |
 | App (open this) | `Study-Planner/index.html` |
-| Technical report | `Study-Planner/REPORT.md` |
-| This guide | `Study-Planner/README.md` |
-| Quick launcher | `START.bat` (project root) |
+| This guide      | `Study-Planner/README.md`  |
 
 No npm install, bundler, or backend required.
 
@@ -45,19 +31,19 @@ No npm install, bundler, or backend required.
 
 ## Requirements Coverage
 
-| Requirement | Implementation |
-|---|---|
-| **Create tasks** | Form → `TaskStore.add()` → `TaskFactory.create()` |
-| **View tasks** | Grouped by subject via Composite pattern; sorted (overdue first) |
-| **Edit tasks** | Edit button fills form; `TaskStore.update()` preserves done/pending status |
-| **Delete tasks** | Delete with confirmation; undo via Memento |
-| **Validate empty inputs** | `TaskFactory.validate()` — subject, title, and deadline required |
-| **Mark done / not done** | Checkbox toggle → `TaskStore.toggle()` |
-| **Filter by subject** | Subject dropdown; combines with status filter |
-| **Filter by status** | All, Pending, Completed, Overdue, Due Today, Due This Week |
-| **Save data** | `localStorage` (auto-save) + JSON export/import backup files |
-| **Statistics** | Total, Completed, Pending, Overdue, Due Today, Due This Week, Completion Rate |
-| **Per-subject stats** | Table built from Composite tree |
+| Requirement               | Implementation                                                                |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| **Create tasks**          | Form → `TaskStore.add()` → `TaskFactory.create()`                             |
+| **View tasks**            | Grouped by subject via Composite pattern; sorted (overdue first)              |
+| **Edit tasks**            | Edit button fills form; `TaskStore.update()` preserves done/pending status    |
+| **Delete tasks**          | Delete with confirmation; undo via Memento                                    |
+| **Validate empty inputs** | `TaskFactory.validate()` — subject, title, and deadline required              |
+| **Mark done / not done**  | Checkbox toggle → `TaskStore.toggle()`                                        |
+| **Filter by subject**     | Subject dropdown; combines with status filter                                 |
+| **Filter by status**      | All, Pending, Completed, Overdue, Due Today, Due This Week                    |
+| **Save data**             | `localStorage` (auto-save) + JSON export/import backup files                  |
+| **Statistics**            | Total, Completed, Pending, Overdue, Due Today, Due This Week, Completion Rate |
+| **Per-subject stats**     | Table built from Composite tree                                               |
 
 ---
 
@@ -164,29 +150,27 @@ User action (click / submit)
 
 ### Layer responsibilities
 
-| Layer | Files | Role |
-|---|---|---|
-| **Presentation** | `index.html`, `styles.css`, `UIRenderer.js` | UI, events, rendering |
-| **Application** | `TaskStore.js` | State, CRUD, coordinates persistence & stats |
-| **Domain** | `Task.js`, `TaskComposite.js` | Task rules, grouping, overdue logic |
-| **Infrastructure** | `LocalStorageRepository.js`, `TaskMemento.js` | Storage, backup, undo snapshots |
-| **Strategies** | `*Strategy.js` | Pluggable filters, deadlines, statistics |
-
-For a deeper explanation of each design pattern, why it was chosen, and how the parts connect, see **[REPORT.md](./REPORT.md)**.
+| Layer              | Files                                         | Role                                         |
+| ------------------ | --------------------------------------------- | -------------------------------------------- |
+| **Presentation**   | `index.html`, `styles.css`, `UIRenderer.js`   | UI, events, rendering                        |
+| **Application**    | `TaskStore.js`                                | State, CRUD, coordinates persistence & stats |
+| **Domain**         | `Task.js`, `TaskComposite.js`                 | Task rules, grouping, overdue logic          |
+| **Infrastructure** | `LocalStorageRepository.js`, `TaskMemento.js` | Storage, backup, undo snapshots              |
+| **Strategies**     | `*Strategy.js`                                | Pluggable filters, deadlines, statistics     |
 
 ---
 
 ## Design Patterns (Summary)
 
-| Pattern | Location | Purpose |
-|---|---|---|
-| **Factory** | `Task.js` | Centralized creation, validation, restore |
-| **Singleton** | `TaskStore.js` | One shared store for the app |
-| **Observer** | `TaskStore.subscribe()` | UI auto-updates on data changes |
-| **Strategy** | `FilterStrategy`, `DeadlineStrategy`, `StatsStrategy` | Swappable rules for filters and stats |
-| **Composite** | `TaskComposite.js` | Uniform subject groups for display and stats |
-| **Repository** | `ITaskRepository`, `LocalStorageRepository` | Abstract persistence from business logic |
-| **Memento** | `TaskMemento.js` | Capture/restore state for undo after delete |
+| Pattern        | Location                                              | Purpose                                      |
+| -------------- | ----------------------------------------------------- | -------------------------------------------- |
+| **Factory**    | `Task.js`                                             | Centralized creation, validation, restore    |
+| **Singleton**  | `TaskStore.js`                                        | One shared store for the app                 |
+| **Observer**   | `TaskStore.subscribe()`                               | UI auto-updates on data changes              |
+| **Strategy**   | `FilterStrategy`, `DeadlineStrategy`, `StatsStrategy` | Swappable rules for filters and stats        |
+| **Composite**  | `TaskComposite.js`                                    | Uniform subject groups for display and stats |
+| **Repository** | `ITaskRepository`, `LocalStorageRepository`           | Abstract persistence from business logic     |
+| **Memento**    | `TaskMemento.js`                                      | Capture/restore state for undo after delete  |
 
 ---
 
